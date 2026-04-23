@@ -44,12 +44,25 @@ export function DebtsTab() {
           + Adicionar
         </Btn>
       </div>
-      <Card style={{ marginBottom: 10, background: T.accentDim }}>
-        <div style={{ fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
-          <strong style={{ color: T.ok }}>Desconto:</strong> simule no app do banco e insira o % aqui.
-          Dívidas com desconto sobem no ranking (taxa efetiva considera a economia da quitação antecipada).
-        </div>
-      </Card>
+      {debts.length > 0 && (
+        <Card style={{ marginBottom: 10, background: T.accentDim }}>
+          <div style={{ fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
+            <strong style={{ color: T.ok }}>Desconto:</strong> simule no app do banco e insira o % aqui.
+            Dívidas com desconto sobem no ranking (taxa efetiva considera a economia da quitação antecipada).
+          </div>
+        </Card>
+      )}
+      {debts.length === 0 && (
+        <Card style={{ marginBottom: 10, textAlign: "center", padding: "24px 16px" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 6 }}>
+            Nenhuma dívida cadastrada
+          </div>
+          <div style={{ fontSize: 11, color: T.muted, marginBottom: 12, lineHeight: 1.5 }}>
+            Adicione suas dívidas para que o motor calcule a ordem ideal de quitação.
+          </div>
+          <Btn onClick={() => setEditing({ mode: "new" })}>Adicionar primeira dívida</Btn>
+        </Card>
+      )}
       {debts.map((d, i) => {
         const score = calcScore(d);
         const label = priorityLabel(score, d);

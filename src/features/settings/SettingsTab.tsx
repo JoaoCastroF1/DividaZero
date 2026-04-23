@@ -100,6 +100,21 @@ export function SettingsTab() {
       </Card>
 
       <Card style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: T.accent, marginBottom: 8 }}>Tom dos textos</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+          <Toggle
+            checked={settings.motivationalMode}
+            onChange={(next) => void updateSettings({ motivationalMode: next })}
+            label="Modo motivacional"
+          />
+          <span style={{ fontSize: 12 }}>Modo motivacional</span>
+        </div>
+        <div style={{ fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
+          Liga mensagens diretas e enfáticas (ex: "NÃO PEGAR EMPRÉSTIMO NOVO"). Por padrão, o app usa tom neutro adequado a contexto profissional.
+        </div>
+      </Card>
+
+      <Card style={{ marginBottom: 10 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: T.accent, marginBottom: 8 }}>Backup</div>
         <div style={{ display: "flex", gap: 6 }}>
           <Btn onClick={handleExport} style={{ flex: 1 }} variant="success">
@@ -168,7 +183,7 @@ export function SettingsTab() {
 
       <Card>
         <div style={{ fontSize: 10, color: T.dim }}>
-          DívidaZero · Motor avalanche + desconto + simulador · Abr/2026
+          DívidaZero · Motor avalanche + desconto + simulador · Dados locais (IndexedDB)
         </div>
       </Card>
     </div>
