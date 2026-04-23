@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { T } from "./theme";
 import { ErrorBoundary } from "./ErrorBoundary";
@@ -7,10 +7,17 @@ import { fBRL } from "../lib/format";
 import { simulate, projectPayoffDate } from "../lib/strategies";
 import { RoteiroTab } from "../features/roteiro/RoteiroTab";
 import { DebtsTab } from "../features/debts/DebtsTab";
-import { StrategiesTab } from "../features/strategies/StrategiesTab";
-import { HistoryTab } from "../features/history/HistoryTab";
-import { SettingsTab } from "../features/settings/SettingsTab";
 import { OnboardingModal } from "../features/onboarding/OnboardingModal";
+
+const StrategiesTab = lazy(() =>
+  import("../features/strategies/StrategiesTab").then((m) => ({ default: m.StrategiesTab })),
+);
+const HistoryTab = lazy(() =>
+  import("../features/history/HistoryTab").then((m) => ({ default: m.HistoryTab })),
+);
+const SettingsTab = lazy(() =>
+  import("../features/settings/SettingsTab").then((m) => ({ default: m.SettingsTab })),
+);
 
 type Tab = "roteiro" | "debts" | "strategies" | "history" | "settings";
 
@@ -191,6 +198,14 @@ function Loading() {
   );
 }
 
+function TabLoading() {
+  return (
+    <div style={{ padding: 24, textAlign: "center", fontSize: 11, color: T.dim }}>
+      Carregando…
+    </div>
+  );
+}
+
 export function App() {
   const init = useAppStore((s) => s.init);
   const loaded = useAppStore((s) => s.loaded);
@@ -235,9 +250,11 @@ export function App() {
         >
           {tab === "roteiro" && <RoteiroTab />}
           {tab === "debts" && <DebtsTab />}
-          {tab === "strategies" && <StrategiesTab />}
-          {tab === "history" && <HistoryTab />}
-          {tab === "settings" && <SettingsTab />}
+          <Suspense fallback={<TabLoading />}>
+            {tab === "strategies" && <StrategiesTab />}
+            {tab === "history" && <HistoryTab />}
+            {tab === "settings" && <SettingsTab />}
+          </Suspense>
         </main>
         <TabBar active={tab} onChange={setTab} />
         <OnboardingModal
