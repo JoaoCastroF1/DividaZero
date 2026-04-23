@@ -20,51 +20,56 @@ export function HistoryTab() {
           Nenhum pagamento registrado.
         </div>
       )}
-      {log.map((entry) => (
-        <Card key={entry.id} style={{ marginBottom: 6 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, alignItems: "center" }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: T.accent }}>
-              {new Date(entry.date).toLocaleDateString("pt-BR")}
-            </span>
-            <span style={{ fontSize: 13, fontWeight: 800, color: T.ok }}>{fBRL(entry.amount)}</span>
-          </div>
-          {entry.allocations?.map((a, j) => (
-            <div
-              key={j}
-              style={{ fontSize: 11, color: T.text, display: "flex", justifyContent: "space-between" }}
-            >
-              <span>{a.name}</span>
-              <span style={{ color: T.ok, fontWeight: 600 }}>{fBRL(a.pay)}</span>
+      {log.map((entry, idx) => {
+        const isLatest = idx === 0;
+        return (
+          <Card key={entry.id} style={{ marginBottom: 6 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, alignItems: "center" }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: T.accent }}>
+                {new Date(entry.date).toLocaleDateString("pt-BR")}
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: T.ok }}>{fBRL(entry.amount)}</span>
             </div>
-          ))}
-          {entry.leftover > EPSILON && (
-            <div style={{ fontSize: 10, color: T.dim, marginTop: 3 }}>Sobra: {fBRL(entry.leftover)}</div>
-          )}
-          <div style={{ marginTop: 6, display: "flex", gap: 6, justifyContent: "flex-end" }}>
-            {confirmUndo === entry.id ? (
-              <>
-                <Btn
-                  small
-                  variant="danger"
-                  onClick={async () => {
-                    await undoLog(entry.id);
-                    setConfirmUndo(null);
-                  }}
-                >
-                  Confirmar
-                </Btn>
-                <Btn small variant="ghost" onClick={() => setConfirmUndo(null)}>
-                  Não
-                </Btn>
-              </>
-            ) : (
-              <Btn small variant="ghost" onClick={() => setConfirmUndo(entry.id)}>
-                Desfazer
-              </Btn>
+            {entry.allocations?.map((a, j) => (
+              <div
+                key={j}
+                style={{ fontSize: 11, color: T.text, display: "flex", justifyContent: "space-between" }}
+              >
+                <span>{a.name}</span>
+                <span style={{ color: T.ok, fontWeight: 600 }}>{fBRL(a.pay)}</span>
+              </div>
+            ))}
+            {entry.leftover > EPSILON && (
+              <div style={{ fontSize: 10, color: T.dim, marginTop: 3 }}>Sobra: {fBRL(entry.leftover)}</div>
             )}
-          </div>
-        </Card>
-      ))}
+            {isLatest && (
+              <div style={{ marginTop: 6, display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                {confirmUndo === entry.id ? (
+                  <>
+                    <Btn
+                      small
+                      variant="danger"
+                      onClick={async () => {
+                        await undoLog(entry.id);
+                        setConfirmUndo(null);
+                      }}
+                    >
+                      Confirmar
+                    </Btn>
+                    <Btn small variant="ghost" onClick={() => setConfirmUndo(null)}>
+                      Não
+                    </Btn>
+                  </>
+                ) : (
+                  <Btn small variant="ghost" onClick={() => setConfirmUndo(entry.id)}>
+                    Desfazer
+                  </Btn>
+                )}
+              </div>
+            )}
+          </Card>
+        );
+      })}
       {log.length > 0 && (
         <div style={{ marginTop: 6 }}>
           {confirmClear ? (

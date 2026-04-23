@@ -121,10 +121,18 @@ async function migrateFromLegacy(): Promise<boolean> {
 }
 
 export async function ensureSeeded(): Promise<void> {
-  const count = await db.debts.count();
-  if (count > 0) return;
+  const settingsRow = await db.settings.get("singleton");
+  if (settingsRow) return;
+
+  const existingDebts = await db.debts.count();
+  if (existingDebts > 0) {
+    await db.settings.put({ id: "singleton", ...DEFAULT_SETTINGS });
+    return;
+  }
+
   const migrated = await migrateFromLegacy();
   if (migrated) return;
+
   await db.transaction("rw", db.debts, db.settings, async () => {
     await db.debts.bulkAdd(INITIAL_DEBTS);
     await db.settings.put({ id: "singleton", ...DEFAULT_SETTINGS });
