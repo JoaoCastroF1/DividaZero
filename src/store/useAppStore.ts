@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { EPSILON, type Debt, type LogEntry, type Settings, DEFAULT_SETTINGS } from "../lib/constants";
 import { sortDebts } from "../lib/score";
 import { uid } from "../lib/format";
-import * as dbm from "../lib/db";
+import { getRepo } from "../lib/repo";
 
 interface AppState {
   debts: Debt[];
@@ -31,8 +31,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   loaded: false,
 
   init: async () => {
-    await dbm.ensureInitialized();
-    const { debts, log, settings } = await dbm.loadAll();
+    await getRepo().ensureInitialized();
+    const { debts, log, settings } = await getRepo().loadAll();
     set({ debts, log, settings, loaded: true });
   },
 
@@ -68,8 +68,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       leftover: remaining,
     };
 
-    await dbm.bulkReplaceDebts(next);
-    await dbm.addLogEntry(entry);
+    await getRepo().bulkReplaceDebts(next);
+    await getRepo().addLogEntry(entry);
     set({ debts: next, log: [entry, ...log].slice(0, 100) });
   },
 
@@ -83,14 +83,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       done: newDone,
       paid: newDone ? target.balance : Math.min(target.paid || 0, target.balance),
     };
-    await dbm.putDebt(updated);
+    await getRepo().putDebt(updated);
     set({ debts: debts.map((d) => (d.id === id ? updated : d)) });
   },
 
   saveDebt: async (debt: Debt) => {
     const { debts } = get();
     const exists = debts.some((d) => d.id === debt.id);
-    await dbm.putDebt(debt);
+    await getRepo().putDebt(debt);
     set({
       debts: exists
         ? debts.map((d) => (d.id === debt.id ? debt : d))
@@ -100,7 +100,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   deleteDebt: async (id: string) => {
     const { debts } = get();
-    await dbm.deleteDebt(id);
+    await getRepo().deleteDebt(id);
     set({ debts: debts.filter((d) => d.id !== id) });
   },
 
@@ -108,7 +108,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (newDebts.length === 0) return;
     const { debts } = get();
     const next = [...debts, ...newDebts];
-    for (const d of newDebts) await dbm.putDebt(d);
+    for (const d of newDebts) await getRepo().putDebt(d);
     set({ debts: next });
   },
 
@@ -118,25 +118,25 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (idx <= 0) return;
     const next = [...debts];
     [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-    await dbm.bulkReplaceDebts(next);
+    await getRepo().bulkReplaceDebts(next);
     set({ debts: next });
   },
 
   updateSettings: async (patch: Partial<Settings>) => {
     const { settings } = get();
     const next = { ...settings, ...patch };
-    await dbm.saveSettings(next);
+    await getRepo().saveSettings(next);
     set({ settings: next });
   },
 
   reset: async () => {
-    await dbm.resetAll();
-    const { debts, log, settings } = await dbm.loadAll();
+    await getRepo().resetAll();
+    const { debts, log, settings } = await getRepo().loadAll();
     set({ debts, log, settings });
   },
 
   clearLog: async () => {
-    await dbm.clearLog();
+    await getRepo().clearLog();
     set({ log: [] });
   },
 
@@ -152,16 +152,16 @@ export const useAppStore = create<AppState>((set, get) => ({
       d.done = a.prevDone;
     }
     const next = debts.map((d) => map.get(d.id) || d);
-    await dbm.bulkReplaceDebts(next);
-    await dbm.deleteLogEntry(id);
+    await getRepo().bulkReplaceDebts(next);
+    await getRepo().deleteLogEntry(id);
     set({ debts: next, log: log.slice(1) });
   },
 
   replaceAll: async (debts: Debt[], log: LogEntry[], settings: Settings) => {
-    await dbm.bulkReplaceDebts(debts);
-    await dbm.clearLog();
-    for (const e of log) await dbm.addLogEntry(e);
-    await dbm.saveSettings(settings);
+    await getRepo().bulkReplaceDebts(debts);
+    await getRepo().clearLog();
+    for (const e of log) await getRepo().addLogEntry(e);
+    await getRepo().saveSettings(settings);
     set({ debts, log, settings });
   },
 }));
