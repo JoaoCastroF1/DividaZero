@@ -13,6 +13,7 @@ interface ViteConfigWithTest extends UserConfig {
 }
 
 const config: ViteConfigWithTest = {
+  base: process.env.VITE_BASE_PATH || "/",
   plugins: [
     react(),
     VitePWA({
@@ -25,11 +26,11 @@ const config: ViteConfigWithTest = {
         theme_color: "#818cf8",
         background_color: "#080d19",
         display: "standalone",
-        start_url: "/",
+        start_url: ".",
         icons: [
-          { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
-          { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
-          { src: "/icon-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          { src: "icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "icon-512.png", sizes: "512x512", type: "image/png" },
+          { src: "icon-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
       workbox: {
