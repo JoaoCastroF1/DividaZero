@@ -7,6 +7,7 @@ import { exportSchema } from "../../lib/validation";
 import { normalizeDebt } from "../../lib/validation";
 import type { Debt, LogEntry, Settings } from "../../lib/constants";
 import { DEFAULT_SETTINGS } from "../../lib/constants";
+import { buildDemoDebts } from "../../lib/demoData";
 
 export function SettingsTab() {
   const settings = useAppStore((s) => s.settings);
@@ -15,6 +16,11 @@ export function SettingsTab() {
   const updateSettings = useAppStore((s) => s.updateSettings);
   const reset = useAppStore((s) => s.reset);
   const replaceAll = useAppStore((s) => s.replaceAll);
+  const importDebts = useAppStore((s) => s.importDebts);
+  const deleteDebt = useAppStore((s) => s.deleteDebt);
+
+  const demoDebts = debts.filter((d) => /^Exemplo —/i.test(d.note || "") || /exemplo$/i.test(d.name));
+  const hasDemoData = demoDebts.length > 0;
 
   const [confirmReset, setConfirmReset] = useState(false);
   const [importMsg, setImportMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -112,6 +118,32 @@ export function SettingsTab() {
         <div style={{ fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
           Liga mensagens diretas e enfáticas (ex: "NÃO PEGAR EMPRÉSTIMO NOVO"). Por padrão, o app usa tom neutro adequado a contexto profissional.
         </div>
+      </Card>
+
+      <Card style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: T.accent, marginBottom: 8 }}>Dados de exemplo</div>
+        <div style={{ fontSize: 10, color: T.muted, lineHeight: 1.5, marginBottom: 8 }}>
+          5 dívidas fictícias para explorar o app ou demonstrar em consulta. Não interfere com seus dados reais além de ocupar lugar na lista.
+        </div>
+        {hasDemoData ? (
+          <Btn
+            variant="ghost"
+            onClick={async () => {
+              for (const d of demoDebts) await deleteDebt(d.id);
+            }}
+            style={{ width: "100%" }}
+          >
+            Remover dados de exemplo ({demoDebts.length})
+          </Btn>
+        ) : (
+          <Btn
+            variant="ghost"
+            onClick={() => void importDebts(buildDemoDebts())}
+            style={{ width: "100%" }}
+          >
+            Carregar dataset de demonstração
+          </Btn>
+        )}
       </Card>
 
       <Card style={{ marginBottom: 10 }}>
