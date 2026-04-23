@@ -142,8 +142,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   undoLog: async (id: string) => {
     const { debts, log } = get();
-    const entry = log.find((e) => e.id === id);
-    if (!entry) return;
+    if (log[0]?.id !== id) return;
+    const entry = log[0];
     const map = new Map(debts.map((d) => [d.id, { ...d }]));
     for (const a of entry.allocations) {
       const d = map.get(a.debtId);
@@ -154,7 +154,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const next = debts.map((d) => map.get(d.id) || d);
     await dbm.bulkReplaceDebts(next);
     await dbm.deleteLogEntry(id);
-    set({ debts: next, log: log.filter((e) => e.id !== id) });
+    set({ debts: next, log: log.slice(1) });
   },
 
   replaceAll: async (debts: Debt[], log: LogEntry[], settings: Settings) => {
