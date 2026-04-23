@@ -10,6 +10,7 @@ import { DebtsTab } from "../features/debts/DebtsTab";
 import { StrategiesTab } from "../features/strategies/StrategiesTab";
 import { HistoryTab } from "../features/history/HistoryTab";
 import { SettingsTab } from "../features/settings/SettingsTab";
+import { OnboardingModal } from "../features/onboarding/OnboardingModal";
 
 type Tab = "roteiro" | "debts" | "strategies" | "history" | "settings";
 
@@ -193,11 +194,20 @@ function Loading() {
 export function App() {
   const init = useAppStore((s) => s.init);
   const loaded = useAppStore((s) => s.loaded);
+  const settings = useAppStore((s) => s.settings);
   const [tab, setTab] = useState<Tab>("roteiro");
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
 
   useEffect(() => {
     void init();
   }, [init]);
+
+  useEffect(() => {
+    if (loaded && !settings.onboardingComplete) {
+      setOnboardingOpen(true);
+      setTab("roteiro");
+    }
+  }, [loaded, settings.onboardingComplete]);
 
   if (!loaded) return <Loading />;
 
@@ -230,6 +240,13 @@ export function App() {
           {tab === "settings" && <SettingsTab />}
         </main>
         <TabBar active={tab} onChange={setTab} />
+        <OnboardingModal
+          open={onboardingOpen}
+          onFinish={() => {
+            setOnboardingOpen(false);
+            setTab("debts");
+          }}
+        />
       </div>
     </ErrorBoundary>
   );
