@@ -31,7 +31,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   loaded: false,
 
   init: async () => {
-    await dbm.ensureSeeded();
+    await dbm.ensureInitialized();
     const { debts, log, settings } = await dbm.loadAll();
     set({ debts, log, settings, loaded: true });
   },

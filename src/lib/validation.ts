@@ -53,6 +53,8 @@ export const exportSchema = z.object({
     monthlyIncome: z.number(),
     monthlyExpenses: z.number(),
     autoSort: z.boolean(),
+    motivationalMode: z.boolean().optional(),
+    onboardingComplete: z.boolean().optional(),
   }),
 });
 

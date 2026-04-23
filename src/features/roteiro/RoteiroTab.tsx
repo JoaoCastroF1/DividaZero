@@ -133,6 +133,16 @@ export function RoteiroTab() {
         )}
       </Card>
 
+      {sorted.length === 0 && (
+        <Card style={{ marginBottom: 10, textAlign: "center", padding: "20px 16px" }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 4 }}>
+            Sem dívidas ativas no momento
+          </div>
+          <div style={{ fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
+            Cadastre suas dívidas na aba <strong style={{ color: T.accent }}>Dívidas</strong> para ver a ordem recomendada de quitação.
+          </div>
+        </Card>
+      )}
       {nextDebt && (
         <div style={{ fontSize: 11, color: T.accent, marginBottom: 10 }}>
           Próximo: <strong style={{ color: T.text }}>{nextDebt.name}</strong> — {fBRL(nextDebt.remaining)}
@@ -295,21 +305,42 @@ export function RoteiroTab() {
         );
       })}
 
-      <div
-        style={{
-          marginTop: 12,
-          padding: 12,
-          background: T.dangerDim,
-          border: `1px solid ${T.danger}22`,
-          borderRadius: 10,
-          textAlign: "center",
-        }}
-      >
-        <div style={{ fontSize: 16, fontWeight: 800, color: T.danger }}>NÃO PEGAR EMPRÉSTIMO NOVO.</div>
-        <div style={{ fontSize: 10, color: "#fca5a5", marginTop: 2 }}>
-          Vontade? Feche o app, espere 24h, releia o roteiro.
-        </div>
-      </div>
+      {sorted.length > 0 && (
+        settings.motivationalMode ? (
+          <div
+            style={{
+              marginTop: 12,
+              padding: 12,
+              background: T.dangerDim,
+              border: `1px solid ${T.danger}22`,
+              borderRadius: 10,
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 16, fontWeight: 800, color: T.danger }}>NÃO PEGAR EMPRÉSTIMO NOVO.</div>
+            <div style={{ fontSize: 10, color: "#fca5a5", marginTop: 2 }}>
+              Vontade? Feche o app, espere 24h, releia o roteiro.
+            </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              marginTop: 12,
+              padding: 12,
+              background: T.accentDim,
+              border: `1px solid ${T.borderActive}`,
+              borderRadius: 10,
+            }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.accent, marginBottom: 4 }}>
+              Recomendação
+            </div>
+            <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.5 }}>
+              Evite contrair novas dívidas enquanto houver saldo ativo. Novo endividamento durante quitação reinicia o ciclo e zera o progresso do motor.
+            </div>
+          </div>
+        )
+      )}
     </div>
   );
 }

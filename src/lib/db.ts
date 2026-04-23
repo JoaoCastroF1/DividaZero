@@ -1,6 +1,6 @@
 import Dexie, { type Table } from "dexie";
 import type { Debt, LogEntry, Settings } from "./constants";
-import { DEFAULT_SETTINGS, INITIAL_DEBTS, STORAGE_KEY_LEGACY } from "./constants";
+import { DEFAULT_SETTINGS, STORAGE_KEY_LEGACY } from "./constants";
 import { normalizeDebt } from "./validation";
 
 export interface SettingsRow extends Settings {
@@ -34,7 +34,13 @@ export async function loadAll(): Promise<{ debts: Debt[]; log: LogEntry[]; setti
     debts,
     log,
     settings: settingsRow
-      ? { monthlyIncome: settingsRow.monthlyIncome, monthlyExpenses: settingsRow.monthlyExpenses, autoSort: settingsRow.autoSort }
+      ? {
+          monthlyIncome: settingsRow.monthlyIncome,
+          monthlyExpenses: settingsRow.monthlyExpenses,
+          autoSort: settingsRow.autoSort,
+          motivationalMode: settingsRow.motivationalMode ?? false,
+          onboardingComplete: settingsRow.onboardingComplete ?? true,
+        }
       : DEFAULT_SETTINGS,
   };
 }
@@ -75,8 +81,6 @@ export async function resetAll(): Promise<void> {
     await db.debts.clear();
     await db.log.clear();
     await db.settings.clear();
-    await db.debts.bulkAdd(INITIAL_DEBTS);
-    await db.settings.put({ id: "singleton", ...DEFAULT_SETTINGS });
   });
 }
 
@@ -120,21 +124,9 @@ async function migrateFromLegacy(): Promise<boolean> {
   }
 }
 
-export async function ensureSeeded(): Promise<void> {
+export async function ensureInitialized(): Promise<void> {
   const settingsRow = await db.settings.get("singleton");
   if (settingsRow) return;
-
-  const existingDebts = await db.debts.count();
-  if (existingDebts > 0) {
-    await db.settings.put({ id: "singleton", ...DEFAULT_SETTINGS });
-    return;
-  }
-
   const migrated = await migrateFromLegacy();
   if (migrated) return;
-
-  await db.transaction("rw", db.debts, db.settings, async () => {
-    await db.debts.bulkAdd(INITIAL_DEBTS);
-    await db.settings.put({ id: "singleton", ...DEFAULT_SETTINGS });
-  });
 }
