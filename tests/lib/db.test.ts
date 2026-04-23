@@ -135,6 +135,19 @@ for (const { name, create } of suites) {
         expect(debts.map((d) => d.id).sort()).toEqual(["new-1", "new-2"]);
       });
 
+      it("reads are isolated — mutating returned value does not affect repo", async () => {
+        await repo.putDebt(sampleDebt);
+        const first = await repo.loadAll();
+        first.debts[0].paid = 9999;
+        first.debts[0].name = "MUTATED";
+        first.settings.monthlyIncome = 123456;
+
+        const second = await repo.loadAll();
+        expect(second.debts[0].paid).toBe(0);
+        expect(second.debts[0].name).toBe("Cartão Teste");
+        expect(second.settings.monthlyIncome).toBe(0);
+      });
+
       it("log entries ordered by date desc", async () => {
         await repo.addLogEntry({
           id: "old",

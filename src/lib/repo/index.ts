@@ -7,9 +7,8 @@ export { MemoryRepo } from "./memory";
 
 let singleton: Repo | null = null;
 
-export function createRepo(): Repo {
-  if (singleton) return singleton;
-  singleton = new DexieRepo();
+export function getRepo(): Repo {
+  if (!singleton) singleton = new DexieRepo();
   return singleton;
 }
 

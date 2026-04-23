@@ -2,6 +2,16 @@ import type { Debt, LogEntry, Settings } from "../constants";
 import { DEFAULT_SETTINGS } from "../constants";
 import type { Repo } from "./types";
 
+function cloneLogEntry(e: LogEntry): LogEntry {
+  return {
+    id: e.id,
+    date: e.date,
+    amount: e.amount,
+    leftover: e.leftover,
+    allocations: e.allocations.map((a) => ({ ...a })),
+  };
+}
+
 export class MemoryRepo implements Repo {
   private debts = new Map<string, Debt>();
   private logEntries = new Map<string, LogEntry>();
@@ -11,11 +21,11 @@ export class MemoryRepo implements Repo {
 
   async loadAll(): Promise<{ debts: Debt[]; log: LogEntry[]; settings: Settings }> {
     return {
-      debts: Array.from(this.debts.values()),
-      log: Array.from(this.logEntries.values()).sort((a, b) =>
-        b.date.localeCompare(a.date),
-      ),
-      settings: this.settings ?? DEFAULT_SETTINGS,
+      debts: Array.from(this.debts.values()).map((d) => ({ ...d })),
+      log: Array.from(this.logEntries.values())
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .map(cloneLogEntry),
+      settings: this.settings ? { ...this.settings } : { ...DEFAULT_SETTINGS },
     };
   }
 
@@ -37,7 +47,7 @@ export class MemoryRepo implements Repo {
   }
 
   async addLogEntry(entry: LogEntry): Promise<void> {
-    this.logEntries.set(entry.id, { ...entry });
+    this.logEntries.set(entry.id, cloneLogEntry(entry));
   }
 
   async deleteLogEntry(id: string): Promise<void> {

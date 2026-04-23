@@ -53,7 +53,7 @@ export class DexieRepo implements Repo {
             motivationalMode: settingsRow.motivationalMode ?? false,
             onboardingComplete: settingsRow.onboardingComplete ?? true,
           }
-        : DEFAULT_SETTINGS,
+        : { ...DEFAULT_SETTINGS },
     };
   }
 
