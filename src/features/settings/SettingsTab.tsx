@@ -8,6 +8,7 @@ import { normalizeDebt } from "../../lib/validation";
 import type { Debt, LogEntry, Settings } from "../../lib/constants";
 import { DEFAULT_SETTINGS } from "../../lib/constants";
 import { buildDemoDebts } from "../../lib/demoData";
+import { PrivacyModal } from "../privacy/PrivacyModal";
 
 export function SettingsTab() {
   const settings = useAppStore((s) => s.settings);
@@ -24,6 +25,7 @@ export function SettingsTab() {
 
   const [confirmReset, setConfirmReset] = useState(false);
   const [importMsg, setImportMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {
@@ -214,10 +216,27 @@ export function SettingsTab() {
       </Card>
 
       <Card>
-        <div style={{ fontSize: 10, color: T.dim }}>
+        <div style={{ fontSize: 10, color: T.dim, marginBottom: 6 }}>
           DívidaZero · Motor avalanche + desconto + simulador · Dados locais (IndexedDB)
         </div>
+        <button
+          onClick={() => setPrivacyOpen(true)}
+          style={{
+            background: "none",
+            border: "none",
+            padding: 0,
+            color: T.accent,
+            fontSize: 10,
+            fontFamily: T.font,
+            cursor: "pointer",
+            textDecoration: "underline",
+          }}
+        >
+          Privacidade e tratamento de dados (LGPD)
+        </button>
       </Card>
+
+      <PrivacyModal open={privacyOpen} onClose={() => setPrivacyOpen(false)} />
     </div>
   );
 }
