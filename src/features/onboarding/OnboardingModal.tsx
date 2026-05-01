@@ -3,6 +3,7 @@ import { useAppStore } from "../../store/useAppStore";
 import { Btn, Card, Field, Modal } from "../../components/ui";
 import { parseNumber, fBRL } from "../../lib/format";
 import { T } from "../../app/theme";
+import { PrivacyModal } from "../privacy/PrivacyModal";
 
 interface OnboardingModalProps {
   open: boolean;
@@ -14,6 +15,7 @@ export function OnboardingModal({ open, onFinish }: OnboardingModalProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [incomeInput, setIncomeInput] = useState("");
   const [expensesInput, setExpensesInput] = useState("");
+  const [privacyOpen, setPrivacyOpen] = useState(false);
 
   const income = parseNumber(incomeInput);
   const expenses = parseNumber(expensesInput);
@@ -39,9 +41,24 @@ export function OnboardingModal({ open, onFinish }: OnboardingModalProps) {
           </div>
           <Card style={{ background: T.accentDim, border: `1px solid ${T.borderActive}`, marginBottom: 10 }}>
             <div style={{ fontSize: 11, color: T.accent, fontWeight: 700, marginBottom: 4 }}>Privacidade</div>
-            <div style={{ fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 10, color: T.muted, lineHeight: 1.5, marginBottom: 6 }}>
               Seus dados ficam <strong>apenas no seu navegador</strong> (IndexedDB). Nada é enviado para servidores. Você pode exportar um backup em JSON a qualquer momento.
             </div>
+            <button
+              onClick={() => setPrivacyOpen(true)}
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                color: T.accent,
+                fontSize: 10,
+                fontFamily: T.font,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              Política completa (LGPD)
+            </button>
           </Card>
           <Btn onClick={() => setStep(2)} style={{ width: "100%" }}>
             Continuar
@@ -102,6 +119,7 @@ export function OnboardingModal({ open, onFinish }: OnboardingModalProps) {
           </div>
         </div>
       )}
+      <PrivacyModal open={privacyOpen} onClose={() => setPrivacyOpen(false)} />
     </Modal>
   );
 }
