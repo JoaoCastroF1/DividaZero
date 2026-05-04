@@ -174,11 +174,38 @@ export function StrategiesTab() {
                 </tbody>
               </table>
             </div>
-            {results.avalanche.insufficientBudget && (
+            {results.score.unfundedMinimums.length > 0 ? (
+              <div
+                style={{
+                  marginTop: 8,
+                  padding: 8,
+                  background: `${T.warn}14`,
+                  borderRadius: 6,
+                  border: `1px solid ${T.warn}40`,
+                }}
+              >
+                <div style={{ fontSize: 11, fontWeight: 700, color: T.warn, marginBottom: 4 }}>
+                  Mínimos descobertos (estratégia score)
+                </div>
+                <div style={{ fontSize: 10, color: T.muted, marginBottom: 6 }}>
+                  O orçamento não cobre o mínimo destas dívidas:
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 16 }}>
+                  {results.score.unfundedMinimums.map((u) => (
+                    <li key={u.debtId} style={{ padding: "2px 0", fontSize: 11, color: T.text }}>
+                      <strong>{u.name}</strong>
+                      <span style={{ color: T.warn, marginLeft: 6 }}>
+                        falta {fBRL(u.shortfall)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : results.score.insufficientBudget ? (
               <div style={{ fontSize: 10, color: T.warn, marginTop: 6 }}>
                 Orçamento abaixo dos mínimos — simulação pode não quitar.
               </div>
-            )}
+            ) : null}
           </Card>
 
           <Card style={{ marginBottom: 10 }}>
