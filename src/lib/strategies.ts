@@ -11,6 +11,12 @@ export interface MonthSnapshot {
   quitadas: string[];
 }
 
+export interface UnfundedMinimum {
+  debtId: string;
+  name: string;
+  shortfall: number;
+}
+
 export interface SimulationResult {
   strategy: Strategy;
   months: MonthSnapshot[];
@@ -19,6 +25,7 @@ export interface SimulationResult {
   totalPaid: number;
   payoffOrder: { debtId: string; name: string; month: number }[];
   insufficientBudget: boolean;
+  unfundedMinimums: UnfundedMinimum[];
 }
 
 interface SimDebt {
@@ -53,6 +60,27 @@ function pickOrder(debts: SimDebt[], strategy: Strategy): SimDebt[] {
   });
 }
 
+function deriveShortfalls(
+  sim: SimDebt[],
+  monthlyBudget: number,
+  strategy: Strategy,
+): UnfundedMinimum[] {
+  const order = pickOrder(sim, strategy);
+  let budget = Math.max(0, monthlyBudget);
+  const shortfalls: UnfundedMinimum[] = [];
+  for (const d of order) {
+    const need = Math.min(Math.max(0, d.minPayment), d.balance);
+    if (need <= EPSILON) continue;
+    if (budget + EPSILON >= need) {
+      budget -= need;
+    } else {
+      shortfalls.push({ debtId: d.id, name: d.name, shortfall: need - budget });
+      budget = 0;
+    }
+  }
+  return shortfalls;
+}
+
 export function simulate(
   debts: Debt[],
   monthlyBudget: number,
@@ -82,6 +110,8 @@ export function simulate(
   let payoffMonth: number | null = null;
   let insufficientBudget = false;
 
+  const unfundedMinimums = deriveShortfalls(sim, monthlyBudget, strategy);
+
   const initialRemaining = sim.reduce((s, d) => s + (d.done ? 0 : d.balance), 0);
   months.push({
     month: 0,
@@ -104,24 +134,26 @@ export function simulate(
     totalInterestPaid += monthInterest;
 
     let budget = monthlyBudget;
-    const minTotal = sim.filter((d) => !d.done).reduce((s, d) => s + Math.min(d.minPayment, d.balance), 0);
+    const order = pickOrder(sim, strategy);
+    const minTotal = order.reduce((s, d) => s + Math.min(d.minPayment, d.balance), 0);
     if (minTotal > budget + EPSILON) {
       insufficientBudget = true;
     }
 
-    for (const d of sim) {
-      if (d.done || budget <= EPSILON) continue;
+    for (const d of order) {
+      if (budget <= EPSILON) break;
+      if (d.balance <= EPSILON) continue;
       const min = Math.min(d.minPayment, d.balance);
       const pay = Math.min(min, budget);
+      if (pay <= 0) continue;
       d.balance -= pay;
       d.paid += pay;
       budget -= pay;
     }
 
-    const order = pickOrder(sim, strategy);
     for (const target of order) {
       if (budget <= EPSILON) break;
-      if (target.done) continue;
+      if (target.balance <= EPSILON) continue;
       const pay = Math.min(target.balance, budget);
       target.balance -= pay;
       target.paid += pay;
@@ -168,6 +200,7 @@ export function simulate(
     totalPaid,
     payoffOrder,
     insufficientBudget,
+    unfundedMinimums,
   };
 }
 

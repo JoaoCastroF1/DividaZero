@@ -92,3 +92,46 @@ describe("compareStrategies", () => {
     expect(result.score).toBeDefined();
   });
 });
+
+describe("simulate (tight budget priority)", () => {
+  it("minimum payments follow strategy order when budget < total minimums", () => {
+    // Two debts: rare (low rate) listed first in array, common (high rate) second.
+    // Avalanche should pay the high-rate one first when budget is tight.
+    const debts = [
+      makeDebt({ id: "low", balance: 5000, rate: 2, minPayment: 100 }),
+      makeDebt({ id: "high", balance: 5000, rate: 30, minPayment: 100 }),
+    ];
+    // Budget covers exactly one minimum.
+    const result = simulate(debts, 100, "avalanche", 1);
+    // After 1 month, the high-rate debt should have been credited the 100, low-rate untouched.
+    const high = result.months[1];
+    expect(high.paidThisMonth).toBeCloseTo(100, 5);
+    // unfundedMinimums should flag "low"
+    expect(result.unfundedMinimums.map((u) => u.debtId)).toContain("low");
+    expect(result.unfundedMinimums.map((u) => u.debtId)).not.toContain("high");
+  });
+
+  it("populates unfundedMinimums when total minimums exceed budget", () => {
+    const debts = [
+      makeDebt({ id: "a", balance: 5000, rate: 5, minPayment: 100 }),
+      makeDebt({ id: "b", balance: 5000, rate: 5, minPayment: 100 }),
+      makeDebt({ id: "c", balance: 5000, rate: 5, minPayment: 100 }),
+    ];
+    const result = simulate(debts, 150, "avalanche", 1);
+    // 150 covers exactly 1.5 minimums → 1 fully covered, 1 partial, 1 short.
+    expect(result.unfundedMinimums.length).toBeGreaterThanOrEqual(1);
+    const totalShortfall = result.unfundedMinimums.reduce((s, u) => s + u.shortfall, 0);
+    expect(totalShortfall).toBeGreaterThan(0);
+    expect(result.insufficientBudget).toBe(true);
+  });
+
+  it("empty unfundedMinimums when budget covers all minimums", () => {
+    const debts = [
+      makeDebt({ id: "a", balance: 1000, rate: 0, minPayment: 50 }),
+      makeDebt({ id: "b", balance: 1000, rate: 0, minPayment: 50 }),
+    ];
+    const result = simulate(debts, 200, "avalanche", 12);
+    expect(result.unfundedMinimums).toEqual([]);
+    expect(result.insufficientBudget).toBe(false);
+  });
+});
