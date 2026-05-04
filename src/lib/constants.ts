@@ -11,6 +11,17 @@ export const TYPES = {
 
 export type DebtType = keyof typeof TYPES;
 
+export const TYPE_WEIGHT: Record<DebtType, number> = {
+  cheque_especial: 1.30,
+  cartao: 1.20,
+  emprestimo: 1.00,
+  financiamento: 0.85,
+};
+
+export const URGENCY_DECAY = 8.5;
+export const URGENCY_MAX = 10;
+export const DISCOUNT_BONUS_FACTOR = 0.5;
+
 export const VALID_TYPES = Object.keys(TYPES) as DebtType[];
 
 export interface Debt {

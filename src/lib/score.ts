@@ -1,14 +1,45 @@
-import { EPSILON, type Debt } from "./constants";
+import {
+  DISCOUNT_BONUS_FACTOR,
+  EPSILON,
+  TYPE_WEIGHT,
+  URGENCY_DECAY,
+  URGENCY_MAX,
+  VALID_TYPES,
+  type Debt,
+  type DebtType,
+} from "./constants";
 import { T } from "../app/theme";
 import { clamp, daysUntil, fBRL, fPct } from "./format";
 
+export function urgencyCurve(deadline: number): number {
+  if (!isFinite(deadline)) return 0;
+  const d = Math.max(0, deadline);
+  return URGENCY_MAX * Math.exp(-d / URGENCY_DECAY);
+}
+
+function typeWeight(type: unknown): number {
+  return VALID_TYPES.includes(type as DebtType)
+    ? TYPE_WEIGHT[type as DebtType]
+    : 1.0;
+}
+
+/**
+ * Motor v3.1.
+ *   score = effectiveRate + threat × urgency + discountBonus
+ *   effectiveRate = (rate × w_type) / (1 − discount/100)   (= 0 durante carência)
+ *   threat        = max(0, penaltyRate × w_type − effectiveRate)
+ *   urgency       = URGENCY_MAX · exp(−deadline / URGENCY_DECAY)
+ *   discountBonus = discount/(100−discount) × urgency × DISCOUNT_BONUS_FACTOR
+ *   deadline      = min(dueDays, grace? grace : ∞)
+ */
 export function calcScore(d: Debt | null | undefined): number {
   if (!d) return -1;
   const remaining = Math.max(0, (d.balance || 0) - (d.paid || 0));
   if (remaining <= EPSILON) return -1;
 
-  const rate = Math.max(0, Number(d.rate) || 0);
-  const penaltyRate = Math.max(0, Number(d.penaltyRate) || rate);
+  const w = typeWeight(d.type);
+  const rate = Math.max(0, Number(d.rate) || 0) * w;
+  const penaltyRate = Math.max(0, Number(d.penaltyRate) || (Number(d.rate) || 0)) * w;
   const grace = Math.max(0, parseInt(String(d.graceDaysLeft)) || 0);
   const discount = clamp(Number(d.discountPct) || 0, 0, 99.99);
   const dueDays = daysUntil(d.dueDate);
@@ -17,15 +48,14 @@ export function calcScore(d: Debt | null | undefined): number {
   const effectiveRate = discount > 0 ? baseRate / (1 - discount / 100) : baseRate;
   const threat = Math.max(0, penaltyRate - effectiveRate);
   const deadline = Math.min(dueDays, grace > 0 ? grace : Infinity);
+  const urgency = urgencyCurve(deadline);
 
-  let urgency: number;
-  if (deadline <= 3) urgency = 10;
-  else if (deadline <= 7) urgency = 5;
-  else if (deadline <= 14) urgency = 3;
-  else if (deadline <= 30) urgency = 1.5;
-  else urgency = 0;
+  const discountBonus =
+    discount > 0 && urgency > 0
+      ? (discount / (100 - discount)) * urgency * DISCOUNT_BONUS_FACTOR
+      : 0;
 
-  return effectiveRate + threat * urgency;
+  return effectiveRate + threat * urgency + discountBonus;
 }
 
 export function sortDebts<D extends Debt>(list: D[]): D[] {
@@ -60,13 +90,19 @@ export function explainScore(d: Debt): string {
   if (remaining <= EPSILON) return "Dívida quitada.";
 
   const parts: string[] = [];
-  const rate = Number(d.rate) || 0;
-  const penaltyRate = Number(d.penaltyRate) || rate;
+  const w = typeWeight(d.type);
+  const rawRate = Number(d.rate) || 0;
+  const rate = rawRate * w;
+  const penaltyRate = (Number(d.penaltyRate) || rawRate) * w;
   const grace = parseInt(String(d.graceDaysLeft)) || 0;
   const discount = clamp(Number(d.discountPct) || 0, 0, 99.99);
   const dueDays = daysUntil(d.dueDate);
   const baseRate = grace > 0 ? 0 : rate;
   const effectiveRate = discount > 0 ? baseRate / (1 - discount / 100) : baseRate;
+
+  if (Math.abs(w - 1) > EPSILON) {
+    parts.push(`Tipo ×${w.toFixed(2)}`);
+  }
 
   if (grace > 0) {
     parts.push(`Carência: ${grace}d sem juros`);
@@ -81,7 +117,13 @@ export function explainScore(d: Debt): string {
 
   const threat = Math.max(0, penaltyRate - effectiveRate);
   const deadline = Math.min(dueDays, grace > 0 ? grace : Infinity);
+  const urgency = urgencyCurve(deadline);
   if (threat > 0 && isFinite(deadline)) parts.push(`Ameaça: +${fPct(threat)} em ${deadline}d`);
+  if (urgency > EPSILON) parts.push(`Urgência ${urgency.toFixed(1)}/10`);
+  if (discount > 0 && urgency > 0) {
+    const bonus = (discount / (100 - discount)) * urgency * DISCOUNT_BONUS_FACTOR;
+    if (bonus > EPSILON) parts.push(`Bônus quitação: +${bonus.toFixed(1)}`);
+  }
   if (isFinite(dueDays)) parts.push(`Vence em ${dueDays}d`);
 
   return parts.join(" · ");
